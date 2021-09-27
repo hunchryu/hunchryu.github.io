@@ -1,0 +1,172 @@
+---
+title:  "[Python] 프로그래머스 Lv.2 - 배달"
+excerpt: "Summer/Winter Coding(~2018)"
+
+categories:
+  - Algorithm
+tags:
+  - [Algorithm, Python, Programmers lv_2, BFS]
+
+toc: true
+toc_sticky: true
+ 
+date: 2021-09-27
+last_modified_at: 2021-09-27
+---
+
+> ### 문제 링크: https://programmers.co.kr/learn/courses/30/lessons/12978
+
+<br>
+
+## __문제의 목표!__
+
+<br>
+
+> ___주어진 수 K보다 조금 걸리는 배달 목적지의 수를 찾아라!___
+
+<br>
+
+## __코드 전문__
+
+<br>
+
+```python
+def make_graph(N, road):
+    graph = [[] for _ in range(N+1)]
+    for path in road:
+        start, end, time = path
+        graph[start].append((end, time))
+        graph[end].append((start, time))
+    return graph
+
+def find_min_dist(graph, distance):
+    from collections import deque
+    queue = deque()
+    distance[1] = 0
+    for (arrive, time) in graph[1]:
+        queue.append((1, arrive, time))
+    while (queue):
+        start, end, time = queue.popleft()
+        new_dist = distance[start] + time
+        if (distance[end] == 0 or distance[end] > new_dist):
+            distance[end] = new_dist
+            for (arrive, time2) in graph[end]:
+                if (arrive == 1): continue
+                queue.append((end, arrive, time2))
+
+def solution(N, road, K):
+    answer = 0
+    graph = make_graph(N, road)
+    distance = [0 for _ in range(N+1)]
+    find_min_dist(graph, distance)
+    return len([x for x in distance[1:] if x <= K])
+```
+
+<br>
+
+## __풀이 별 단계__
+
+<br>
+
+### 0. 해야 할 일 
+
+<br>
+
+* 거리(시간) 지도 만들기
+* 배달 목적지 별 최소 소요 시간 목록 만들기
+* 만든 목록에서 K 이하로 걸리는 배달 목적지의 수 찾기
+
+> 사용 알고리즘 : __BFS__
+
+>> __WHY?__
+
+>>> 언제나 출발지는 마을 1로 정해져 있기 때문에, 출발지에서 가까운 마을부터 점점 먼 곳을 탐색하는 알고리즘인 BFS를 활용하기로 결정했다.
+
+<br>
+
+### 1. 거리 지도 만들기
+
+<br>
+
+```python
+def make_graph(N, road):
+    graph = [[] for _ in range(N+1)]
+    for path in road:
+        start, end, time = path
+        graph[start].append((end, time))
+        graph[end].append((start, time))
+    return graph
+```
+<br>
+
+먼저 다음 단계에서 활용하기 위해 __목적지와 소요 시간의 정보를 저장한__ 그래프를 만들었다.
+
+여기서 __Point__ 는 __(N+1)__ 의 리스트를 사용했다는 것이다.
+
+이런 이유는 입력값이 마을 1을 _1_ 로 입력해주기 때문에, 인덱스에서 늘 -1을 해주며 생길 수 있는 혼란을 미리 방지하기 위함이었다.
+
+<br>
+
+### 2. 배달 목적지 별 최소 소요 시간 목록 만들기
+
+<br>
+
+``` python
+def find_min_dist(graph, distance):
+    from collections import deque
+    queue = deque()
+    distance[1] = 0
+    for (arrive, time) in graph[1]:
+        queue.append((1, arrive, time))
+    while (queue):
+        start, end, time = queue.popleft()
+        new_dist = distance[start] + time
+        if (distance[end] == 0 or distance[end] > new_dist):
+            distance[end] = new_dist
+            for (arrive, time2) in graph[end]:
+                if (arrive == 1): continue
+                queue.append((end, arrive, time2))
+```
+
+<br>
+
+BFS를 사용하기 위해 파이썬에서 제공하는 __deque를__ 사용했다.
+
+deque는 배열의 앞뒤로 모두 빠르게 접근할 수 있어 BFS 알고리즘 활용에 용이하다.
+
+BFS를 활용할 때는 방문했던 곳을 다시 방문하지 않도록 하기 위해서 __visit[]가__ 필요하다.
+
+하지만 이번 문제의 경우, 루트의 다양성으로 인해 __중복 방문__ 을 하는 경우가 있다.
+
+그래서 방문 여부를 나타내는 __visit__ 과 최소 거리를 저장하는 __distance__ 를 혼용했다.
+
+대신 도착지가 1인 경우는 없도록 조치했으며, distance가 0이 아닌 경우에는 __더 작은 값이 올 때만__ 갱신을 했다.
+
+그 외의 경우에는 어차피 목적지에 도달하는 최소거리가 아니기 때문에 기록의 가치가 없기 때문이다.
+
+<br>
+
+### 3. 만든 목록에서 K 이하로 걸리는 배달 목적지의 수 찾기
+
+<br>
+
+``` python
+def solution(N, road, K):
+    answer = 0
+    graph = make_graph(N, road)
+    distance = [0 for _ in range(N+1)]
+    find_min_dist(graph, distance)
+    return len([x for x in distance[1:] if x <= K])
+```
+
+<br>
+
+distance 배열에서 K 이하의 값만을 가지고 새로운 리스트를 만든 뒤, 그 리스트의 길이를 출력함으로써 답을 찾았다.
+
+__단, 여기서 주의할 점은 처음 배열을 만들 때 (N+1)로 만들었기 때문에 첫 원소를 제외해야 한다는 점이다.__
+
+## 더 생각해보기
+
+<br>
+
+* 최소신장트리 관련 알고리즘으로도 풀 수 있을까?
